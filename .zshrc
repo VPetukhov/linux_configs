@@ -2,7 +2,7 @@
 source ~/.bash_aliases
 source ~/.bashrc
 
-export PATH=/home/viktor/local/anaconda3/bin:/home/viktor/local/bin:/home/viktor/local/usr/bin:/usr/local/bin:$PATH
+export PATH=$HOME/local/anaconda3/bin:$HOME/local/bin:$HOME/local/usr/bin:/usr/local/bin:$PATH
 export ZSH=$HOME/.oh-my-zsh
 
 PS1='[\u@\h \W]\$ '
@@ -92,11 +92,11 @@ source $ZSH/oh-my-zsh.sh
 
 HISTSIZE=10000000;
 
-PATH="/home/viktor/perl5/bin${PATH:+:${PATH}}"; export PATH;
-PERL5LIB="/home/viktor/perl5/lib/perl5${PERL5LIB:+:${PERL5LIB}}"; export PERL5LIB;
-PERL_LOCAL_LIB_ROOT="/home/viktor/perl5${PERL_LOCAL_LIB_ROOT:+:${PERL_LOCAL_LIB_ROOT}}"; export PERL_LOCAL_LIB_ROOT;
-PERL_MB_OPT="--install_base \"/home/viktor/perl5\""; export PERL_MB_OPT;
-PERL_MM_OPT="INSTALL_BASE=/home/viktor/perl5"; export PERL_MM_OPT;
+# PATH="/home/viktor/perl5/bin${PATH:+:${PATH}}"; export PATH;
+# PERL5LIB="/home/viktor/perl5/lib/perl5${PERL5LIB:+:${PERL5LIB}}"; export PERL5LIB;
+# PERL_LOCAL_LIB_ROOT="/home/viktor/perl5${PERL_LOCAL_LIB_ROOT:+:${PERL_LOCAL_LIB_ROOT}}"; export PERL_LOCAL_LIB_ROOT;
+# PERL_MB_OPT="--install_base \"/home/viktor/perl5\""; export PERL_MB_OPT;
+# PERL_MM_OPT="INSTALL_BASE=/home/viktor/perl5"; export PERL_MM_OPT;
 
 # Add RVM to PATH for scripting. Make sure this is the last PATH variable change.
 export PATH="$PATH:$HOME/.rvm/bin"
