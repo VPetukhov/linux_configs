@@ -4,6 +4,7 @@ source ~/.bashrc
 
 export PATH=$HOME/local/anaconda3/bin:$HOME/local/bin:$HOME/local/usr/bin:/usr/local/bin:$PATH
 export ZSH=$HOME/.oh-my-zsh
+export LESSCHARSET=UTF-8
 
 PS1='[\u@\h \W]\$ '
 
