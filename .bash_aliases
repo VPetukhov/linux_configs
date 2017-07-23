@@ -16,3 +16,5 @@ alias tls='tmux ls'
 alias tkill='tmux kill-session -t'
 
 alias diff2="diff -y --suppress-common-lines"
+
+mkcdir () {mkdir "$1" && cd "$1"}
