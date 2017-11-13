@@ -31,7 +31,8 @@
 (setq auto-save-default nil) ; Don't want any auto saving
 
 (add-to-list 'load-path "~/.emacs.d/addons/")
-(add-to-list 'load-path "~/.emacs.d/auto-complete/")
+(add-to-list 'load-path "~/.emacs.d/addons/auto-complete/")
+(add-to-list 'load-path "~/.emacs.d/addone/polymode")
 
 ;; http://code.google.com/p/dea/source/browse/trunk/my-lisps/linum%2B.el
 (require 'linum+)
@@ -51,7 +52,6 @@
 ;; http://www.emacswiki.org/emacs/AutoComplete
 (require 'auto-complete-config)
 (ac-config-default)
-(add-to-list 'ac-dictionary-directories "/home/dim/EmacsCasts/episode03/auto-complete/dict")
 
 ;; http://www.emacswiki.org/emacs/SrSpeedbar
 (require 'sr-speedbar)
@@ -73,7 +73,6 @@
 (add-hook 'server-visit-hook 'colortheme-hook)
 
 ;; Docker
-(require 'docker)
 (require 'dockerfile-mode)
 (add-to-list 'auto-mode-alist '("Dockerfile\\'" . dockerfile-mode))
 
