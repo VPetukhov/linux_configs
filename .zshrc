@@ -2,9 +2,9 @@
 source ~/.bash_aliases
 source ~/.bashrc
 
-export PATH=$HOME/local/anaconda3/bin:$HOME/local/bin:$HOME/local/usr/bin:/usr/local/bin:$PATH
+# export PATH=$HOME/.cask/bin:$HOME/local/bin:$HOME/local/usr/bin:$HOME/local/usr/local/bin/:/usr/local/bin:$PATH
+# export PATH=$HOME/local/anaconda3/bin:$PATH
 export ZSH=$HOME/.oh-my-zsh
-export LESSCHARSET=UTF-8
 
 PS1='[\u@\h \W]\$ '
 
@@ -15,6 +15,7 @@ PS1='[\u@\h \W]\$ '
 # time that oh-my-zsh is loaded.
 #ZSH_THEME="3den"
 ZSH_THEME="robbyrussell"
+export LESSCHARSET=UTF-8
 
 # autoload -U compinit promptinit
 # compinit
@@ -64,7 +65,7 @@ COMPLETION_WAITING_DOTS="true"
 # Example format: plugins=(rails git textmate ruby lighthouse)
 # Add wisely, as too many plugins slow down shell startup.
 
-plugins=(compleat git pip python sublime sudo svn zsh-syntax-highlighting)
+plugins=(compleat zsh-cmd-architect git pip python sublime sudo svn zsh-syntax-highlighting svn)
 
 # export MANPATH="/usr/local/man:$MANPATH"
 
@@ -93,12 +94,6 @@ source $ZSH/oh-my-zsh.sh
 
 HISTSIZE=10000000;
 
-# PATH="/home/viktor/perl5/bin${PATH:+:${PATH}}"; export PATH;
-# PERL5LIB="/home/viktor/perl5/lib/perl5${PERL5LIB:+:${PERL5LIB}}"; export PERL5LIB;
-# PERL_LOCAL_LIB_ROOT="/home/viktor/perl5${PERL_LOCAL_LIB_ROOT:+:${PERL_LOCAL_LIB_ROOT}}"; export PERL_LOCAL_LIB_ROOT;
-# PERL_MB_OPT="--install_base \"/home/viktor/perl5\""; export PERL_MB_OPT;
-# PERL_MM_OPT="INSTALL_BASE=/home/viktor/perl5"; export PERL_MM_OPT;
-
 # Add RVM to PATH for scripting. Make sure this is the last PATH variable change.
 export PATH="$PATH:$HOME/.rvm/bin"
 
@@ -119,3 +114,15 @@ setopt interactivecomments
 #    RPS1="${${KEYMAP/vicmd/$VIM_PROMPT}/(main|viins)/} $EPS1"
 #    zle reset-prompt
 #}
+
+### ZNT's installer added snippet ###
+fpath=( "$fpath[@]" "$HOME/.config/znt/zsh-navigation-tools" )
+autoload n-aliases n-cd n-env n-functions n-history n-kill n-list n-list-draw n-list-input n-options n-panelize n-help
+autoload znt-usetty-wrapper znt-history-widget znt-cd-widget znt-kill-widget
+alias naliases=n-aliases ncd=n-cd nenv=n-env nfunctions=n-functions nhistory=n-history
+alias nkill=n-kill noptions=n-options npanelize=n-panelize nhelp=n-help
+zle -N znt-history-widget
+bindkey '^[r' znt-history-widget
+setopt AUTO_PUSHD HIST_IGNORE_DUPS PUSHD_IGNORE_DUPS
+zstyle ':completion::complete:n-kill::bits' matcher 'r:|=** l:|=*'
+### END ###
