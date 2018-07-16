@@ -9,6 +9,7 @@ RUN \
     cmake3 \
     git \
     htop \
+    ImageMagick \
     libcurl-devel \
     openssl-devel \
     R \
@@ -35,7 +36,8 @@ RUN \
   ln -s /bin/python3.6 /bin/python3 && \
   ln -s /bin/pip3.6 /bin/pip3
 
-RUN pip3 install jupyter numpy scipy matplotlib seaborn pandas jupyter_contrib_nbextensions jupyter_nbextensions_configurator
+RUN pip3 install jupyter numpy scipy matplotlib seaborn pandas sklearn scikit-image \
+  jupyter_contrib_nbextensions jupyter_nbextensions_configurator jupyterthemes
 
 RUN \
   jupyter nbextensions_configurator enable && \
@@ -57,8 +59,10 @@ RUN \
 RUN \
   ln -s /julia/usr/bin/julia /bin/julia
 
-# Other
-RUN useradd -m vp -G wheel
+# User
+RUN useradd -m -s /bin/zsh -G wheel -u 1029 vp && \
+  passwd -d vp
+
 USER vp
 
 ENTRYPOINT ["/bin/zsh"]
@@ -68,7 +72,7 @@ RUN \
   jupyter nbextension enable codefolding/main && \
   jupyter nbextension enable codefolding/edit && \
   jupyter nbextension enable collapsible_headings/main && \
-  jupyter nbextension enable code_prettify/isort && \
+  # jupyter nbextension enable code_prettify/isort && \
   jupyter nbextension enable notify/notify && \
   jupyter nbextension enable ruler/main && \
   jupyter nbextension enable table_beautifier/main && \
@@ -87,11 +91,13 @@ RUN git clone https://github.com/VPetukhov/linux_configs.git && \
   echo "" > .bashrc && \
   cp linux_configs/.zshrc . && \
   cp linux_configs/.bash_aliases . && \
-  git clone https://github.com/robbyrussell/oh-my-zsh.git .oh-my-zsh
+  git clone https://github.com/robbyrussell/oh-my-zsh.git .oh-my-zsh && \
+  mkdir -p .jupyter/custom/ && \ 
+  cp linux_configs/jupyter_theme.css ~/.jupyter/custom/custom.css
 
-RUN echo 'for pkg in ["DataFrames", "Plots", "Distributions", "StatsBase", "HDF5", "Suppressor", "RCall", "PyCall", "FileIO", "CSV", "PyPlot", "StatsBase", "Iterators", "Suppressor", "NearestNeighbors", "ProgressMeter", "Distances", "Clustering", "MultivariateStats", "ConcaveHull", "Graphs", "IterTools", "ImageSegmentation", "IJulia"] Pkg.add(pkg) end; Pkg.build()' > julia_pkgs.jl
+RUN echo '{"NotebookApp": {"password": "sha1:40e75814693d:13a7813e89658790bd76440f5a70506c8e37c9f9"}}' > .jupyter/jupyter_notebook_config.json
+
+RUN echo 'for pkg in ["DataFrames", "Plots", "Distributions", "StatsBase", "HDF5", "Suppressor", "RCall", "PyCall", "FileIO", "CSV", "PyPlot", "StatsBase", "Iterators", "Suppressor", "NearestNeighbors", "ProgressMeter", "Distances", "Clustering", "MultivariateStats", "ConcaveHull", "Graphs", "IterTools", "ImageSegmentation", "IJulia", "PlotlyJS", "TSne", "ImageMagick"] Pkg.add(pkg) end; Pkg.build()' > julia_pkgs.jl
 
 ENV PYTHON=/usr/bin/python3
 RUN julia julia_pkgs.jl
-
-RUN echo '{"NotebookApp": {"password": "sha1:40e75814693d:13a7813e89658790bd76440f5a70506c8e37c9f9"}}' > .jupyter/jupyter_notebook_config.json
