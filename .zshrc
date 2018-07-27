@@ -1,3 +1,13 @@
+# Making Emacs tramp work
+if [[ "$TERM" == "dumb" ]]
+then
+  unsetopt zle
+  unsetopt prompt_cr
+  unsetopt prompt_subst
+  PS1='$ '
+  return
+fi
+
 # Path to your oh-my-zsh installation.
 source ~/.bash_aliases
 source ~/.bashrc
@@ -126,3 +136,5 @@ bindkey '^[r' znt-history-widget
 setopt AUTO_PUSHD HIST_IGNORE_DUPS PUSHD_IGNORE_DUPS
 zstyle ':completion::complete:n-kill::bits' matcher 'r:|=** l:|=*'
 ### END ###
+
+
