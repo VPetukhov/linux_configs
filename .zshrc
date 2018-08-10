@@ -75,7 +75,7 @@ COMPLETION_WAITING_DOTS="true"
 # Example format: plugins=(rails git textmate ruby lighthouse)
 # Add wisely, as too many plugins slow down shell startup.
 
-plugins=(compleat zsh-cmd-architect git pip python sublime sudo svn zsh-syntax-highlighting svn)
+plugins=(compleat zsh-cmd-architect git pip python sublime sudo svn zsh-syntax-highlighting svn zsh-autosuggestions)
 
 # export MANPATH="/usr/local/man:$MANPATH"
 
@@ -136,5 +136,3 @@ bindkey '^[r' znt-history-widget
 setopt AUTO_PUSHD HIST_IGNORE_DUPS PUSHD_IGNORE_DUPS
 zstyle ':completion::complete:n-kill::bits' matcher 'r:|=** l:|=*'
 ### END ###
-
-
