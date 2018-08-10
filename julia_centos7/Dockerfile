@@ -44,11 +44,11 @@ RUN \
   jupyter contrib nbextension install
 
 # Julia
-RUN yum install -y bzip2 hdf5 m4 openssl patch
+RUN yum install -y bzip2 hdf5 m4 openssl patch gettext-libs gtk3
 
 RUN \
-  wget https://github.com/JuliaLang/julia/releases/download/v0.6.4/julia-0.6.4-full.tar.gz && \
-  tar xvf julia-0.6.4-full.tar.gz
+  wget https://github.com/JuliaLang/julia/releases/download/v0.7.0/julia-0.7.0-full.tar.gz && \
+  tar xvf julia-0.7.0-full.tar.gz
 
  RUN \
   source /opt/rh/devtoolset-7/enable && \
@@ -68,6 +68,7 @@ USER vp
 ENTRYPOINT ["/bin/zsh"]
 WORKDIR /home/vp
 
+## Zsh and Jupyter
 RUN \
   jupyter nbextension enable codefolding/main && \
   jupyter nbextension enable codefolding/edit && \
@@ -95,9 +96,20 @@ RUN git clone https://github.com/VPetukhov/linux_configs.git && \
   mkdir -p .jupyter/custom/ && \ 
   cp linux_configs/jupyter_theme.css ~/.jupyter/custom/custom.css
 
+RUN sh -c "$(curl -fsSL https://raw.githubusercontent.com/psprint/zsh-navigation-tools/master/doc/install.sh)"
+
 RUN echo '{"NotebookApp": {"password": "sha1:40e75814693d:13a7813e89658790bd76440f5a70506c8e37c9f9"}}' > .jupyter/jupyter_notebook_config.json
 
-RUN echo 'for pkg in ["DataFrames", "Plots", "Distributions", "StatsBase", "HDF5", "Suppressor", "RCall", "PyCall", "FileIO", "CSV", "PyPlot", "StatsBase", "Iterators", "Suppressor", "NearestNeighbors", "ProgressMeter", "Distances", "Clustering", "MultivariateStats", "ConcaveHull", "Graphs", "IterTools", "ImageSegmentation", "IJulia", "PlotlyJS", "TSne", "ImageMagick"] Pkg.add(pkg) end; Pkg.build()' > julia_pkgs.jl
+## Julia
+RUN echo 'for pkg in ["DataFrames", "Plots", "Distributions", "StatsBase", "HDF5", "Suppressor", "RCall", "PyCall", "FileIO", "CSV", "PyPlot", "StatsBase", "Iterators", "Suppressor", "NearestNeighbors", "ProgressMeter", "Distances", "Clustering", "MultivariateStats", "ConcaveHull", "Graphs", "IterTools", "ImageSegmentation", "IJulia", "PlotlyJS", "TSne", "ImageMagick", "ProfileView"] Pkg.add(pkg) end; Pkg.build()' > julia_pkgs.jl
 
 ENV PYTHON=/usr/bin/python3
 RUN julia julia_pkgs.jl
+
+## R
+RUN \
+  mkdir -p ~/R/x86_64-redhat-linux-gnu-library/3.4 && \
+  echo '.libPaths(c("~/R/x86_64-redhat-linux-gnu-library/3.4", .libPaths()))' > .Rprofile && \
+  R -e 'chooseCRANmirror(ind=52); install.packages(c("devtools", "tidyverse", "Rcpp"))'
+
+
