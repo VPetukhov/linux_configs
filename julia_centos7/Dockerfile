@@ -89,14 +89,17 @@ RUN \
   jupyter nbextension enable toc2/main
 
 RUN git clone https://github.com/VPetukhov/linux_configs.git && \
-  echo "" > .bashrc && \
+  echo "source /opt/rh/devtoolset-7/enable" > .bashrc && \
   cp linux_configs/.zshrc . && \
   cp linux_configs/.bash_aliases . && \
   git clone https://github.com/robbyrussell/oh-my-zsh.git .oh-my-zsh && \
   mkdir -p .jupyter/custom/ && \ 
   cp linux_configs/jupyter_theme.css ~/.jupyter/custom/custom.css
 
-RUN sh -c "$(curl -fsSL https://raw.githubusercontent.com/psprint/zsh-navigation-tools/master/doc/install.sh)"
+RUN \
+  sh -c "$(curl -fsSL https://raw.githubusercontent.com/psprint/zsh-navigation-tools/master/doc/install.sh)" && \
+  git clone https://github.com/zsh-users/zsh-syntax-highlighting.git ${ZSH_CUSTOM:-~/.oh-my-zsh/custom}/plugins/zsh-syntax-highlighting && \
+  git clone https://github.com/zsh-users/zsh-autosuggestions ${ZSH_CUSTOM:-~/.oh-my-zsh/custom}/plugins/zsh-autosuggestions
 
 RUN echo '{"NotebookApp": {"password": "sha1:40e75814693d:13a7813e89658790bd76440f5a70506c8e37c9f9"}}' > .jupyter/jupyter_notebook_config.json
 
