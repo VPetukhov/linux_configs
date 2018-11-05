@@ -25,7 +25,7 @@ yasnippet.el:
 	wget https://raw.githubusercontent.com/joaotavora/yasnippet/master/yasnippet.el
 
 color-theme.el:
-	wget http://download.savannah.nongnu.org/releases/color-theme/color-theme.el.gz && gunzip color-theme.el.gz
+	wget https://download.savannah.nongnu.org/releases/color-theme/color-theme.el.gz && gunzip color-theme.el.gz
 
 dockerfile-mode.el:
 	wget https://raw.githubusercontent.com/spotify/dockerfile-mode/master/dockerfile-mode.el
