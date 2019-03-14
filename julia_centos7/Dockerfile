@@ -41,7 +41,8 @@ RUN pip3 install jupyter numpy scipy matplotlib seaborn pandas sklearn scikit-im
 
 RUN \
   jupyter nbextensions_configurator enable && \
-  jupyter contrib nbextension install
+  jupyter contrib nbextension install && \
+  python3 -m pip install jupyterlab
 
 # Julia
 RUN yum install -y bzip2 hdf5 m4 openssl patch gettext-libs gtk3
