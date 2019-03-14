@@ -6,6 +6,10 @@
 (when (< emacs-major-version 24)
   ;; For important compatibility libraries like cl-lib
   (add-to-list 'package-archives '("gnu" . "http://elpa.gnu.org/packages/")))
+
+(add-to-list 'load-path "~/.emacs.d/addons/")
+
+;; Activate package autoloads
 (package-initialize)
 
 ;; ergoemacs
@@ -69,6 +73,10 @@
 
 (require 'back-button)
 
+;;Display an overlay in each window showing a unique key. In the mean time, ask user for the window where move to
+(require 'switch-window)
+(global-set-key (kbd "C-e") 'switch-window)
+
 ;;; Org-mode
 (require 'org)
 
@@ -97,6 +105,9 @@
 (setq org-src-fontify-natively t)
 (setq org-src-tab-acts-natively t)
 
+;;;; ODT back-end
+(eval-after-load "org" '(require 'ox-odt nil t))
+
 ;; Docker
 (require 'dockerfile-mode)
 (add-to-list 'auto-mode-alist '("Dockerfile\\'" . dockerfile-mode))
@@ -118,6 +129,8 @@
 (require 'tramp)
 (require 'ssh)
 (setq tramp-default-method "ssh")
+(add-to-list 'tramp-remote-path 'tramp-own-remote-path)
+(add-to-list 'tramp-remote-path "/usr/local/R/R-3.5.1/lib/R/bin/")
 
 (require 'ess-site)
 (ess-toggle-S-assign nil)
@@ -129,13 +142,49 @@
 (setq comint-scroll-to-bottom-on-output t)
 (setq comint-move-point-for-output t)
 
+(define-key ess-mode-map (kbd "<M-return>") 'ess-eval-region)
 (define-key ess-mode-map (kbd "<C-return>") 'ess-eval-line-and-step)
 (define-key ess-mode-map (kbd "<C-S-return>") 'rmd-send-chunk)
 (define-key ess-mode-map (kbd "C-S-i") 'rmd-new-chunk)
-;; (define-key poly-markdown+r-mode-map (kbd "C-S-i") 'rmd-new-chunk)
-;; (define-key markdown-mode-map (kbd "C-S-i") 'rmd-new-chunk)
+(define-key ess-mode-map (kbd "C-S-k") 'dev-off)
+(define-key poly-markdown+r-mode-map (kbd "C-S-i") 'rmd-new-chunk)
 
+(define-key ess-mode-map (kbd "C-e") 'switch-window)
+(define-key inferior-ess-mode-map (kbd "C-e") 'switch-window)
 
+;;;; Remote sessions
+
+(defvar R-remote-host "ada")
+(defvar R-remote-dtach-directory "/d0-mendel/home/viktor_petukhov/.dtach/")
+(defvar R-remote-directory "/d0-mendel/home/viktor_petukhov/Copenhagen/NeuronalMaturation/")
+(defvar R-remote-session "nm")
+(defun R-remote (&optional remote-host session directory)
+  "Connect to the remote-host's dtach session running R."
+  (interactive (list
+                (read-from-minibuffer "R remote host: " R-remote-host)
+                (read-from-minibuffer "R remote session: " R-remote-session)
+                (read-from-minibuffer "R remote directory: " R-remote-directory)))
+  (pop-to-buffer (make-comint (concat "remote-" session)
+                              "ssh" nil "-C" "-t" remote-host
+                              "source ~/.bashrc; cd" directory ";"
+                              "dtach" "-A" (concat R-remote-dtach-directory ".dtach-" session)
+                              "-z" "-E" "-r" "none"
+                              inferior-R-program-name "--no-readline"
+                              inferior-R-args))
+  (ess-remote (process-name (get-buffer-process (current-buffer))) "R")
+  (setq comint-process-echoes t))
+
+;; ;; Company
+;; ;; provides popup autocompletion, particularly for R
+;; (require 'company)
+;; (add-hook 'after-init-hook 'global-company-mode)
+
+;; (define-key inferior-ess-mode-map (kbd "TAB") 'company-complete)
+;; (define-key ess-mode-map (kbd "TAB") 'company-complete)
+
+;; ;;;; company-quickhelp
+;; ;;;; popups with documentation
+;; (company-quickhelp-mode)
 
 ;; put cursor in last used position when re-opening file
 (require 'saveplace)
@@ -143,7 +192,7 @@
 
 ;; Code navigation
 (require 'imenu)
-(setq imenu-auto-rescan t) ;; autoatically update functions list in the buffer
+(setq imenu-auto-rescan t) ;; automatically update functions list in the buffer
 (global-set-key (kbd "C-.") #'imenu-anywhere)
 (global-set-key (kbd "C-.") 'imenu)
 
@@ -169,7 +218,6 @@
 (global-set-key (kbd "C-S-<f9>") 'hs-show-all)
 
 ;; Keybindings
-(global-set-key (kbd "C-e") 'other-window)
 (global-set-key (kbd "C-w") 'delete-window)
 (global-set-key (kbd "C-M-w") 'kill-this-buffer)
 (global-set-key (kbd "M-b") 'bs-show)
@@ -238,6 +286,8 @@
 (setq scroll-conservatively 10000)
 
 (setq-default fill-column 160)
+
+(setq-default cursor-type 'bar) ;; thin cursor
 
 (defun unkillable-scratch-buffer ()
 	(if (equal (buffer-name (current-buffer)) "*scratch*")
@@ -312,3 +362,77 @@ send regions above point."
 (defun dev-load()
   (interactive)
   (ess-eval-linewise "devtools::load_all()"))
+
+(defun dev-off()
+  (interactive)
+  (ess-eval-linewise "dev.off()"))
+
+;; Spell-check for two languages
+(defvar lcl-var:spelling-ignore nil)
+
+(defun lcl:spelling-add-to-dictionary (marked-text)
+  (let* ((word (downcase (aref marked-text 0)))
+         (dict (if (string-match "[a-zA-Z]" word)
+                   (message "en_US.dic")
+                 (message "ru_RU.dic")))
+         (file (concat "~/.config/enchant/" dict)))
+    (when (and file (file-writable-p file))
+      (with-temp-buffer
+        (insert word) (newline)
+        (append-to-file (point-min) (point-max) file)
+        (message "Added word \"%s\" to the \"%s\" dictionary" word dict))
+      (wcheck-mode 0)
+      (wcheck-mode 1))))
+
+(defun lcl:spelling-add-to-ignore (marked-text)
+  (let ((word (aref marked-text 0)))
+    (add-to-list 'lcl-var:spelling-ignore word)
+    (message "Added word \"%s\" to the ignore list" word)
+    (wcheck--hook-outline-view-change)))
+
+(defun lcl:spelling-action-menu (marked-text)
+  (append (wcheck-parser-ispell-suggestions)
+          (list (cons "[Add to dictionary]" 'lcl:spelling-add-to-dictionary)
+                (cons "[Ignore]" 'lcl:spelling-add-to-ignore))))
+
+(defun lcl:delete-list (delete-list list)
+  (dolist (el delete-list)
+    (setq list (remove el list)))
+  list)
+
+(defun lcl:spelling-parser-lines (&rest ignored)
+  (lcl:delete-list lcl-var:spelling-ignore
+                   (delete-dups
+                    (split-string
+                     (buffer-substring-no-properties (point-min) (point-max))
+                     "\n+" t))))
+
+(defun cfg:spelling ()
+  (require 'wcheck-mode)
+  (defun wcheck--choose-action-minibuffer (actions)
+    (cdr
+     (assoc
+      (ido-completing-read "Choose " (mapcar #'car actions))
+      actions)))
+  (setq-default
+   wcheck-language "All"
+   wcheck-language-data
+   '(("All"
+      (program . "/home/viktor/local/bin/spell_check_text.sh")
+      (parser . lcl:spelling-parser-lines)
+      (action-program . "/home/viktor/local/bin/spell_check_word.sh")
+      (action-parser . lcl:spelling-action-menu)
+      (read-or-skip-faces
+       ((emacs-lisp-mode c-mode c++-mode python-mode)
+        read font-lock-comment-face)
+       (org-mode
+        skip org-block-begin-line org-block-end-line org-meta-line org-link)
+       (nil))
+      ))))
+(cfg:spelling)
+
+(global-set-key (kbd "C-P") 'wcheck-actions)
+(add-hook 'org-mode-hook 'wcheck-mode) ;; Run wcheck with org-mode
+
+;; Final rebindings
+(global-set-key (kbd "<end>") 'move-end-of-line)
