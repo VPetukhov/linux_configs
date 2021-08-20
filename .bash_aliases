@@ -2,12 +2,8 @@ alias ec='emacsclient -t'
 alias eg='emacsclient -c'
 alias rdolphin='dolphin > /dev/null 2>&1 ./ &'
 
-alias sshorchest='ssh vp76@orchestra.med.harvard.edu -t zsh'
-
 alias ls='ls --color=auto'
 alias rf='readlink -f'
-
-alias zshconfig="vim ~/.zshrc"
 
 alias tmux='tmux -2'
 alias ta='tmux attach -t'
@@ -16,6 +12,17 @@ alias tls='tmux ls'
 alias tkill='tmux kill-session -t'
 alias diff2="diff -y --suppress-common-lines"
 
-alias condaenable='source ~/.condapaths'
-
 mkcdir () {mkdir "$1" && cd "$1"}
+
+# from https://remysharp.com/2018/08/23/cli-improved
+
+alias pping='prettyping --nolegend'
+alias du='ncdu --color dark -rr -x'
+alias preview="fzf --preview 'bat --color \"always\" {}'"
+alias r=radian
+
+
+sfw() {
+    targ=${3:- $2}
+    ssh $1 -NL "$targ":localhost:$2
+}
