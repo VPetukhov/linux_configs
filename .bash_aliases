@@ -1,7 +1,3 @@
-alias ec='emacsclient -t'
-alias eg='emacsclient -c'
-alias rdolphin='dolphin > /dev/null 2>&1 ./ &'
-
 alias ls='ls --color=auto'
 alias rf='readlink -f'
 
@@ -17,12 +13,18 @@ mkcdir () {mkdir "$1" && cd "$1"}
 # from https://remysharp.com/2018/08/23/cli-improved
 
 alias pping='prettyping --nolegend'
-alias du='ncdu --color dark -rr -x'
+alias ncdu='ncdu --color dark -rr -x'
 alias preview="fzf --preview 'bat --color \"always\" {}'"
-alias r=radian
+alias RR=radian
 
 
 sfw() {
     targ=${3:- $2}
     ssh $1 -NL "$targ":localhost:$2
 }
+alias cat=bat
+
+sview () {samtools view $1 | less -S}
+
+cdl () {cd "$1" && ls -la}
+zless () {zcat "$1" | less -S}
