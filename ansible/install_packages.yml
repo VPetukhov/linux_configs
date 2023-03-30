@@ -1,0 +1,18 @@
+# https://stackoverflow.com/questions/61553365/ansible-same-playbook-for-different-linux-distribution
+- hosts: remote
+  become: yes
+  tasks:
+    - name: Set OS distribution dependent variables
+      include_vars: "os_{{ ansible_facts['distribution'] }}.yml"
+    - name: install required packages
+      package:
+        name: "{{ required_packages }}"
+        state: latest
+    - name: install snap packages
+      snap:
+        name: "micro"
+        classic: true
+    - name: install rust packages
+      community.general.cargo:
+        name: ["zellij"]
+        #name: ["git-delta", "lsd", "zoxide"] # "micro", "zellij",
