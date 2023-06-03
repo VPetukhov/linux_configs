@@ -1,0 +1,137 @@
+- name: Install and configure user environment
+  hosts: centos_base
+
+  tasks:
+
+    - name: Add current user to Docker group
+      user:
+        name: "{{ ansible_env.USER }}"
+        groups: docker
+        append: yes
+        state: present
+      become: true
+
+# ZSH configuration
+
+    - name: Set Zsh as default shell for current user
+      user:
+        name: "{{ ansible_user }}"
+        shell: /usr/bin/zsh
+      become: true
+
+    - name: Clone Git repository
+      git:
+        repo: https://github.com/VPetukhov/linux_configs.git
+        dest: /tmp/linux_configs
+
+    - name: Clone Vundle.vim repository
+      git:
+        repo: "https://github.com/VundleVim/Vundle.vim.git"
+        dest: "{{ ansible_env.HOME }}/.vim/bundle/Vundle.vim"
+
+    - name: Create colors directory for Vim
+      file:
+        path: "{{ ansible_env.HOME }}/.vim/colors"
+        state: directory
+
+    - name: Install Wombat256 color scheme for Vim
+      get_url:
+        url: "https://www.vim.org/scripts/download_script.php?src_id=13397"
+        dest: "{{ ansible_env.HOME }}/.vim/colors/wombat256.vim"
+
+    - name: Copy .vimrc file
+      copy:
+        src: /tmp/linux_configs/.vimrc
+        dest: "{{ ansible_env.HOME }}"
+        remote_src: true
+
+    - name: Copy .zshrc file
+      copy:
+        src: /tmp/linux_configs/.zshrc
+        dest: "{{ ansible_env.HOME }}"
+        remote_src: true
+
+    - name: Copy .bashrc file
+      copy:
+        src: /tmp/linux_configs/.bashrc
+        dest: "{{ ansible_env.HOME }}"
+        remote_src: true
+
+    - name: Copy .bash_aliases file
+      copy:
+        src: /tmp/linux_configs/.bash_aliases
+        dest: "{{ ansible_env.HOME }}"
+        remote_src: true
+
+    - name: Install oh-my-zsh
+      ansible.builtin.shell: "bash -c \"$(curl -fsSL https://raw.githubusercontent.com/robbyrussell/oh-my-zsh/master/tools/install.sh)\""
+      args:
+        creates: "{{ ansible_env.HOME }}/.oh-my-zsh"
+
+    - name: Download Zsh Navigation Tools installation script
+      get_url:
+        url: https://raw.githubusercontent.com/psprint/zsh-navigation-tools/master/doc/install.sh
+        dest: "/tmp/zsh-navigation-tools.sh"
+        mode: '0755'
+
+    - name: Install Zsh Navigation Tools
+      command: "/tmp/zsh-navigation-tools.sh"
+      args:
+        creates: "{{ ansible_env.HOME }}/.oh-my-zsh/custom/plugins/zsh-navigation-tools"
+
+    - name: Install Zsh Autosuggestions
+      git:
+        repo: https://github.com/zsh-users/zsh-autosuggestions
+        dest: "{{ ansible_env.HOME }}/.oh-my-zsh/custom/plugins/zsh-autosuggestions"
+
+    - name: Install Zsh Syntax Highlighting
+      git:
+        repo: https://github.com/zsh-users/zsh-syntax-highlighting.git
+        dest: "{{ ansible_env.HOME }}/.oh-my-zsh/custom/plugins/zsh-syntax-highlighting"
+
+# Rust
+    - name: Download Rust installation script
+      get_url:
+        url: https://sh.rustup.rs
+        dest: /tmp/rustup.sh
+        mode: 0755
+
+    - name: Install Rust
+      shell: /tmp/rustup.sh -y
+      args:
+        creates: "{{ ansible_env.HOME }}/.cargo"
+
+    - name: Add ~/.cargo/bin to PATH in .zshrc
+      lineinfile:
+        path: "{{ ansible_env.HOME }}/.zshrc"
+        line: "export PATH=\"${HOME}/.cargo/bin:${PATH}\""
+        state: present
+        create: yes
+        insertafter: EOF
+        regexp: "^export PATH=.*\\.cargo/bin.*$"
+
+# Cargo packages:
+    - name: Enable selinuxuser_execstack on CentOS # Required for Cargo to work without sudo
+      ansible.builtin.command: "setsebool -P selinuxuser_execstack on"
+      when: ansible_distribution == 'CentOS'
+      become: true
+
+    - name: Cargo packages
+      community.general.cargo:
+        name:
+          - bat
+          - git-delta
+          - lsd
+          - rm-improved
+          - zellij
+          - zoxide
+        state: latest
+        path: "{{ ansible_env.HOME }}/.cargo/bin"
+
+# # Micromamba
+
+#     - name: Download Micromamba installation script
+#       get_url:
+#         url: "https://github.com/conda-forge/miniforge/releases/latest/download/Mambaforge-Linux-x86_64.sh"
+#         dest: /tmp/micromamba.sh
+#         mode: 0755

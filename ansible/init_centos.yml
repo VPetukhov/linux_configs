@@ -1,0 +1,69 @@
+- name: Install and configure basic CentOS packages
+  hosts: centos_base
+  become: true
+
+  tasks:
+  # Caddy
+    - name: Install 'dnf-command(copr)'
+      dnf:
+        name: dnf-command(copr)
+        state: present
+
+    - name: Enable @caddy/caddy repository
+      command: dnf copr enable -y @caddy/caddy
+
+    - name: Install Caddy
+      dnf:
+        name: caddy
+        state: present
+
+    - name: Enable and start Caddy service
+      systemd:
+        name: caddy
+        enabled: yes
+        state: started
+
+# Docker
+    - name: Download Docker repository file
+      get_url:
+        url: https://download.docker.com/linux/centos/docker-ce.repo
+        dest: /etc/yum.repos.d/docker-ce.repo
+
+    - name: Install required packages for Docker
+      dnf:
+        name:
+          - dnf-plugins-core
+          - containerd.io
+          - docker-ce
+          - docker-ce-cli
+          - docker-buildx-plugin
+          - docker-compose-plugin
+        state: present
+
+    - name: Enable and start Docker service
+      systemd:
+        name: docker
+        enabled: yes
+        state: started
+
+# System packages
+    - name: Install epel-release
+      dnf:
+        name: epel-release
+        state: present
+
+    - name: Install packages
+      dnf:
+        name:
+          - zsh
+          - vim
+          - htop
+          - git
+          - micro
+          - nnn
+          - gcc
+          - gcc-c++
+          - glibc-devel
+          - make
+        state: present
+

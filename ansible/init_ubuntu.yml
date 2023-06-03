@@ -1,0 +1,13 @@
+- name: Install and configure basic Ubuntu packages
+  hosts: ubuntu_base
+  become: true
+
+  tasks:
+    - name: System packages
+      ansible.builtin.package:
+        name:
+          - build-essential
+          - zsh
+          - vim
+          - htop
+          - git
