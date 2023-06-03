@@ -45,7 +45,7 @@ To install the software through Ansible, you first need to fill in the `inventor
 ipv4.address     ansible_connection=ssh        ansible_user=username
 ```
 
-Don't forget to set the `host` variable in the `.yml` files to match the group name in the `inventory.ini` file (eg, `centos_base`).
+You need to change `ipv4.address` to the actual IP address of the target machine and `username` to the actual username. Also, make sure that the `host` variable in the `.yml` files matches the group name in the `inventory.ini` file *(`centos_base` in the example)*. See full docs on Ansible inventories [here](https://docs.ansible.com/ansible/latest/inventory_guide/intro_inventory.html#inventory-basics-formats-hosts-and-groups).
 
 Then, you can run the following command:
 
