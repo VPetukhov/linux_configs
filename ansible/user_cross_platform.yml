@@ -64,7 +64,7 @@
         remote_src: true
 
     - name: Install oh-my-zsh
-      ansible.builtin.shell: "bash -c \"$(curl -fsSL https://raw.githubusercontent.com/robbyrussell/oh-my-zsh/master/tools/install.sh)\""
+      ansible.builtin.shell: "sh -c \"$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)\" \"\" --unattended"
       args:
         creates: "{{ ansible_env.HOME }}/.oh-my-zsh"
 
