@@ -1,6 +1,10 @@
 # Ansible configs
 
-To use these configs you need to clone this repository and enter this directory (`linux_configs/ansible`).
+To use these configs you need to clone this repository and enter this directory (`linux_configs/ansible`):
+```bash
+git clone https://github.com/VPetukhov/linux_configs.git
+cd linux_configs/ansible
+```
 
 ## Install Ansible on the master machine
 
