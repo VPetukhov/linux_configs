@@ -52,4 +52,7 @@ Then, you can run the following command:
 ```bash
 ansible-playbook --inventory ./inventory.ini init_centos.yml # use init_ubuntu.yml for Ubuntu
 ansible-playbook --inventory ./inventory.ini user_cross_platform.yml
+
+# this one goes separately, as it requires environment set up before to see cargo
+ansible-playbook --inventory ./inventory.ini cargo_packages.yml
 ```

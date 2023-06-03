@@ -2,7 +2,6 @@
   hosts: centos_base
 
   tasks:
-
     - name: Add current user to Docker group
       user:
         name: "{{ ansible_env.USER }}"
@@ -109,24 +108,6 @@
         create: yes
         insertafter: EOF
         regexp: "^export PATH=.*\\.cargo/bin.*$"
-
-# Cargo packages:
-    - name: Enable selinuxuser_execstack on CentOS # Required for Cargo to work without sudo
-      ansible.builtin.command: "setsebool -P selinuxuser_execstack on"
-      when: ansible_distribution == 'CentOS'
-      become: true
-
-    - name: Cargo packages
-      community.general.cargo:
-        name:
-          - bat
-          - git-delta
-          - lsd
-          - rm-improved
-          - zellij
-          - zoxide
-        state: latest
-        path: "{{ ansible_env.HOME }}/.cargo/bin"
 
 # # Micromamba
 

@@ -1,0 +1,29 @@
+- name: Install and configure user environment
+  hosts: centos_base
+
+  tasks:
+
+    - name: Enable selinuxuser_execstack on CentOS # Required for Cargo to work without sudo
+      ansible.builtin.command: "setsebool -P selinuxuser_execstack on"
+      when: ansible_distribution == 'CentOS'
+      become: true
+
+    - name: Small packages
+      community.general.cargo:
+        name:
+          - bat
+          - git-delta
+          - lsd
+          - rm-improved
+          - zoxide
+        state: latest
+        path: "{{ ansible_env.HOME }}/.cargo/bin"
+
+    # We could set all packages in one task, but that way we wouldn't see progress,
+    # so I extracted large packages separately
+
+    - name: zellij # this part is very slow, so you can manually run `cargo install zellij` instead
+      community.general.cargo:
+        name: zellij
+        state: latest
+        path: "{{ ansible_env.HOME }}/.cargo/bin"
