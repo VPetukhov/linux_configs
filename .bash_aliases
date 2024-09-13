@@ -5,6 +5,8 @@ alias rfiles='nautilus > /dev/null 2>&1 ./ &'
 alias sshorchest='ssh vp76@orchestra.med.harvard.edu -t zsh'
 
 alias ls='ls --color=auto'
+alias ll='lsd -l'
+alias la='lsd -la'
 alias rf='readlink -f'
 
 alias zshconfig="vim ~/.zshrc"
@@ -32,8 +34,8 @@ alias preview="fzf --preview 'bat --color \"always\" {}'"
 alias RR=radian
 
 alias snowpack='yarn run snowpack'
-alias bat='/usr/bin/bat --style="changes"'
-
+alias bat='bat --style="changes,header"'
+alias e=micro
 
 sview () {samtools view $1 | less -S}
 

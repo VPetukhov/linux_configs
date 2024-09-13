@@ -8,8 +8,6 @@ then
   return
 fi
 
-# Path to your oh-my-zsh installation.
-source ~/.bash_aliases
 source ~/.bashrc
 
 # export PATH=$HOME/.cask/bin:$HOME/local/bin:$HOME/local/usr/bin:$HOME/local/usr/local/bin/:/usr/local/bin:$PATH
@@ -108,6 +106,8 @@ HISTSIZE=10000000;
 export PATH="$PATH:$HOME/.rvm/bin"
 
 export TERM="xterm-256color"
+
+source ~/.bash_aliases # it's last because I want it to overwrite the plugins
 
 # allows you to type Bash style comments on your command line
 # good 'ol Bash
