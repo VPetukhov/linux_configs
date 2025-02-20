@@ -1,9 +1,3 @@
-alias ec='emacsclient -t'
-alias eg='emacsclient -c'
-alias rfiles='nautilus > /dev/null 2>&1 ./ &'
-
-alias sshorchest='ssh vp76@orchestra.med.harvard.edu -t zsh'
-
 alias ls='ls --color=auto'
 alias ll='lsd -l'
 alias la='lsd -la'
@@ -20,22 +14,19 @@ alias diff2="diff -y --suppress-common-lines"
 
 mkcdir () {mkdir "$1" && cd "$1"}
 
-# VPN
-
-alias wgup='sudo wg-quick up mullvad-se1'
-alias wgdown='sudo wg-quick down mullvad-se1'
-alias wgr='wgdown; wgup'
-
 # from https://remysharp.com/2018/08/23/cli-improved
 
 alias pping='prettyping --nolegend'
 alias ncdu='ncdu --color dark -rr -x'
 alias preview="fzf --preview 'bat --color \"always\" {}'"
+
 alias RR=radian
 
 alias snowpack='yarn run snowpack'
 alias bat='bat --style="changes,header"'
 alias e=micro
+
+alias open=xdg-open
 
 sview () {samtools view $1 | less -S}
 
