@@ -1,5 +1,5 @@
 - name: Install and configure user environment
-  hosts: centos_base
+  hosts: targets
 
   tasks:
 
@@ -22,8 +22,8 @@
     # We could set all packages in one task, but that way we wouldn't see progress,
     # so I extracted large packages separately
 
-    - name: zellij # this part is very slow, so you can manually run `cargo install zellij` instead
-      community.general.cargo:
-        name: zellij
-        state: latest
-        path: "{{ ansible_env.HOME }}/.cargo/bin"
+    # - name: zellij # this part is very slow, so you can manually run `cargo install zellij` instead
+    #   community.general.cargo:
+    #     name: zellij
+    #     state: latest
+    #     path: "{{ ansible_env.HOME }}/.cargo/bin"

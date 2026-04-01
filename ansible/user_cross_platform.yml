@@ -1,5 +1,5 @@
 - name: Install and configure user environment
-  hosts: centos_base
+  hosts: targets
 
   tasks:
     - name: Add current user to Docker group
@@ -14,7 +14,7 @@
 
     - name: Set Zsh as default shell for current user
       user:
-        name: "{{ ansible_user }}"
+        name: "{{ ansible_env.USER }}"
         shell: /usr/bin/zsh
       become: true
 

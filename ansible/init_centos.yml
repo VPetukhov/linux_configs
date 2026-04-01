@@ -1,5 +1,5 @@
 - name: Install and configure basic CentOS packages
-  hosts: centos_base
+  hosts: sealverin
   become: true
 
   tasks:
@@ -33,9 +33,9 @@
       dnf:
         name:
           - dnf-plugins-core
-          - containerd.io
           - docker-ce
           - docker-ce-cli
+          - containerd.io
           - docker-buildx-plugin
           - docker-compose-plugin
         state: present
@@ -47,7 +47,7 @@
         state: started
 
 # System packages
-    - name: Install epel-release
+    - name: Install epel-release # Isn't required for Fedora
       dnf:
         name: epel-release
         state: present
@@ -59,11 +59,15 @@
           - vim
           - htop
           - git
-          - micro
-          - nnn
+          # - micro
+          # - nnn
           - gcc
           - gcc-c++
           - glibc-devel
           - make
+          - zip
+          - unzip
+          - python3-devel
+          - tmux
         state: present
 

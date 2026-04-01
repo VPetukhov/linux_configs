@@ -1,5 +1,5 @@
 - name: Install and configure basic Ubuntu packages
-  hosts: ubuntu_base
+  hosts: targets
   become: true
 
   tasks:
