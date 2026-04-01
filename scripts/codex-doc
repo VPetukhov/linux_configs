@@ -1,0 +1,167 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# Image name (auto-built on first run)
+IMAGE="${CODEX_DOC_IMAGE:-codex-doc:latest}"
+
+# Persisted Codex state on the host (stores auth.json/config.toml/etc.)
+STATE_DIR="${CODEX_DOC_STATE_DIR:-$HOME/.codex}"
+CODEX_HOME_DIR="/state/.codex"
+
+# YOLO mode default: 1 (enabled). Set CODEX_DOC_YOLO=0 to disable.
+YOLO="${CODEX_DOC_YOLO:-1}"
+
+# Install GSD support by default. Set CODEX_DOC_GSD=0 to skip syncing skills.
+GSD="${CODEX_DOC_GSD:-1}"
+GSD_SPEC="${CODEX_DOC_GSD_SPEC:-git+https://github.com/gsd-build/get-shit-done.git}"
+
+usage() {
+  cat <<'USAGE'
+Usage:
+  codex-doc --login
+  codex-doc --update-image
+  codex-doc /absolute/or/relative/path/to/project
+
+Env vars:
+  CODEX_DOC_IMAGE=codex-doc:latest        # override the docker image name
+  CODEX_DOC_STATE_DIR=~/.codex            # where Codex state is stored on host
+  CODEX_DOC_YOLO=1|0                      # default 1 (enabled), set 0 to disable
+  CODEX_DOC_GSD=1|0                       # default 1, set 0 to skip GSD install/sync
+  CODEX_DOC_GSD_SPEC=git+https://github.com/gsd-build/get-shit-done.git
+                                         # git/npm spec used when building the image
+USAGE
+}
+
+build_image() {
+  local update="${1:-0}"
+  local -a build_opts=(-t "$IMAGE" --build-arg "GSD_SPEC=$GSD_SPEC")
+
+  if [[ "$update" == "1" ]]; then
+    build_opts=(--pull --no-cache -t "$IMAGE" --build-arg "GSD_SPEC=$GSD_SPEC")
+  fi
+
+  docker build "${build_opts[@]}" - <<'DOCKERFILE'
+FROM node:22-bookworm
+
+# Basic dev tooling that Codex commonly needs in repos
+RUN apt-get update && apt-get install -y --no-install-recommends \
+      git openssh-client ca-certificates curl jq ripgrep \
+      build-essential python3 make \
+    && rm -rf /var/lib/apt/lists/*
+
+ARG GSD_SPEC=git+https://github.com/gsd-build/get-shit-done.git
+
+# Install Codex CLI and GSD from the configured package/repo spec.
+RUN npm i -g @openai/codex "${GSD_SPEC}"
+
+WORKDIR /work
+DOCKERFILE
+}
+
+ensure_image() {
+  if docker image inspect "$IMAGE" >/dev/null 2>&1; then
+    return 0
+  fi
+
+  echo "Building $IMAGE (one-time)…" >&2
+  build_image 0
+}
+
+update_image() {
+  echo "Updating $IMAGE (pulling latest base image, Codex CLI, and GSD)…" >&2
+  build_image 1
+}
+
+host_abs_path() {
+  local p="$1"
+  if command -v realpath >/dev/null 2>&1; then
+    realpath "$p"
+  elif command -v readlink >/dev/null 2>&1; then
+    readlink -f "$p" || printf "%s\n" "$p"
+  else
+    # best-effort
+    (cd "$p" 2>/dev/null && pwd -P) || printf "%s\n" "$p"
+  fi
+}
+
+common_run_args() {
+  # shellcheck disable=SC2046
+  cat <<ARGS
+--rm --init -it
+-e TERM=${TERM:-xterm-256color}
+-e HOME=/tmp
+-e CODEX_HOME=${CODEX_HOME_DIR}
+-e OPENAI_API_KEY=
+-v ${STATE_DIR}:${CODEX_HOME_DIR}:rw
+-u $(id -u):$(id -g)
+--cap-drop=ALL
+--security-opt=no-new-privileges
+ARGS
+}
+
+container_bootstrap_script() {
+  cat <<'SCRIPT'
+if [[ "${CODEX_DOC_GSD:-1}" != "0" ]]; then
+  tmp_log="$(mktemp)"
+  echo "Syncing Get Shit Done into ${CODEX_HOME}..." >&2
+  if ! get-shit-done-cc --codex --global --config-dir "${CODEX_HOME}" >"$tmp_log" 2>&1; then
+    cat "$tmp_log" >&2
+    rm -f "$tmp_log"
+    exit 1
+  fi
+  rm -f "$tmp_log"
+fi
+SCRIPT
+}
+
+main() {
+  if [[ $# -eq 0 || "$1" == "-h" || "$1" == "--help" ]]; then
+    usage
+    exit 0
+  fi
+
+  mkdir -p "$STATE_DIR"
+
+  if [[ $# -eq 1 && "$1" == "--login" ]]; then
+    ensure_image
+    # Headless-friendly ChatGPT/OpenAI auth
+    docker run $(common_run_args) \
+      -e CODEX_DOC_GSD="$GSD" \
+      "$IMAGE" bash -lc \
+      "$(container_bootstrap_script)
+codex login --device-auth && codex login status"
+    exit 0
+  fi
+
+  if [[ $# -eq 1 && ( "$1" == "--update-image" || "$1" == "--update" ) ]]; then
+    update_image
+    exit 0
+  fi
+
+  if [[ $# -ne 1 ]]; then
+    usage
+    exit 2
+  fi
+
+  ensure_image
+
+  local_dir="$(host_abs_path "$1")"
+  if [[ ! -d "$local_dir" ]]; then
+    echo "Not a directory: $local_dir" >&2
+    exit 2
+  fi
+
+  docker run $(common_run_args) \
+    -e CODEX_DOC_GSD="$GSD" \
+    -e CODEX_DOC_YOLO="$YOLO" \
+    -v "$local_dir":/work:rw -w /work \
+    "$IMAGE" bash -lc "$(container_bootstrap_script)
+      if [[ "${CODEX_DOC_YOLO:-1}" != "0" ]]; then
+        exec codex --yolo
+      else
+        exec codex
+      fi
+    "
+}
+
+main "$@"
