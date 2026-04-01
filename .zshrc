@@ -73,7 +73,7 @@ COMPLETION_WAITING_DOTS="true"
 # Example format: plugins=(rails git textmate ruby lighthouse)
 # Add wisely, as too many plugins slow down shell startup.
 
-plugins=(compleat zsh-cmd-architect git pip python sublime sudo svn zsh-syntax-highlighting svn zsh-autosuggestions)
+plugins=(compleat git pip python sublime sudo svn zsh-syntax-highlighting svn zsh-autosuggestions z)
 
 # export MANPATH="/usr/local/man:$MANPATH"
 
