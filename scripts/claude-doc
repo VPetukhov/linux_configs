@@ -2,33 +2,35 @@
 set -euo pipefail
 
 # Image name (auto-built on first run)
-IMAGE="${CODEX_DOC_IMAGE:-codex-doc:latest}"
+IMAGE="${CLAUDE_DOC_IMAGE:-claude-doc:latest}"
 
-# Persisted Codex state on the host (stores auth.json/config.toml/etc.)
-STATE_DIR="${CODEX_DOC_STATE_DIR:-$HOME/.codex}"
-CODEX_HOME_DIR="/state/.codex"
+# Persisted Claude state on the host. Inside the container this becomes HOME,
+# so Claude can store both ~/.claude/ and ~/.claude.json in one place.
+STATE_DIR="${CLAUDE_DOC_STATE_DIR:-$HOME/.claude-doc}"
+STATE_HOME_DIR="/state"
+CLAUDE_CONFIG_DIR="${STATE_HOME_DIR}/.claude"
 
-# YOLO mode default: 1 (enabled). Set CODEX_DOC_YOLO=0 to disable.
-YOLO="${CODEX_DOC_YOLO:-1}"
+# YOLO mode default: 1 (enabled). Set CLAUDE_DOC_YOLO=0 to disable.
+YOLO="${CLAUDE_DOC_YOLO:-1}"
 
-# Install GSD support by default. Set CODEX_DOC_GSD=0 to skip syncing skills.
-GSD="${CODEX_DOC_GSD:-1}"
-GSD_SPEC="${CODEX_DOC_GSD_SPEC:-git+https://github.com/gsd-build/get-shit-done.git}"
+# Install GSD support by default. Set CLAUDE_DOC_GSD=0 to skip syncing skills.
+GSD="${CLAUDE_DOC_GSD:-1}"
+GSD_SPEC="${CLAUDE_DOC_GSD_SPEC:-get-shit-done-cc@latest}"
 
 usage() {
   cat <<'USAGE'
 Usage:
-  codex-doc --login
-  codex-doc --update-image
-  codex-doc /absolute/or/relative/path/to/project
+  claude-doc --login
+  claude-doc --update-image
+  claude-doc /absolute/or/relative/path/to/project
 
 Env vars:
-  CODEX_DOC_IMAGE=codex-doc:latest        # override the docker image name
-  CODEX_DOC_STATE_DIR=~/.codex            # where Codex state is stored on host
-  CODEX_DOC_YOLO=1|0                      # default 1 (enabled), set 0 to disable
-  CODEX_DOC_GSD=1|0                       # default 1, set 0 to skip GSD install/sync
-  CODEX_DOC_GSD_SPEC=git+https://github.com/gsd-build/get-shit-done.git
-                                         # git/npm spec used when building the image
+  CLAUDE_DOC_IMAGE=claude-doc:latest      # override the docker image name
+  CLAUDE_DOC_STATE_DIR=~/.claude-doc      # host dir that stores ~/.claude and ~/.claude.json
+  CLAUDE_DOC_YOLO=1|0                     # default 1 (enabled), set 0 to disable
+  CLAUDE_DOC_GSD=1|0                      # default 1, set 0 to skip GSD install/sync
+  CLAUDE_DOC_GSD_SPEC=get-shit-done-cc@latest
+                                         # npm spec used when building the image
 USAGE
 }
 
@@ -43,13 +45,13 @@ build_image() {
   docker build "${build_opts[@]}" - <<'DOCKERFILE'
 FROM node:22-bookworm
 
-# Basic dev tooling that Codex commonly needs in repos
+# Basic dev tooling that Claude Code commonly needs in repos
 RUN apt-get update && apt-get install -y --no-install-recommends \
       git openssh-client ca-certificates curl jq ripgrep bubblewrap \
       build-essential python3 python3-pip python3-venv python-is-python3 make \
     && rm -rf /var/lib/apt/lists/*
 
-ENV VIRTUAL_ENV=/opt/codex-python
+ENV VIRTUAL_ENV=/opt/claude-doc-python
 ENV PATH="${VIRTUAL_ENV}/bin:${PATH}"
 
 # Preinstall a small Python data-science/tooling stack.
@@ -66,10 +68,10 @@ RUN python -m venv "${VIRTUAL_ENV}" \
       statsmodels \
       tqdm
 
-ARG GSD_SPEC=git+https://github.com/gsd-build/get-shit-done.git
+ARG GSD_SPEC=get-shit-done-cc@latest
 
-# Install Codex CLI and GSD from the configured package/repo spec.
-RUN npm i -g @openai/codex "${GSD_SPEC}"
+# Install Claude Code and GSD from npm.
+RUN npm i -g @anthropic-ai/claude-code "${GSD_SPEC}"
 
 WORKDIR /work
 DOCKERFILE
@@ -80,12 +82,12 @@ ensure_image() {
     return 0
   fi
 
-  echo "Building $IMAGE (one-time)…" >&2
+  echo "Building $IMAGE (one-time)..." >&2
   build_image 0
 }
 
 update_image() {
-  echo "Updating $IMAGE (pulling latest base image, Codex CLI, and GSD)…" >&2
+  echo "Updating $IMAGE (pulling latest base image, Claude Code, and GSD)..." >&2
   build_image 1
 }
 
@@ -106,11 +108,10 @@ common_run_args() {
   cat <<ARGS
 --rm --init -it
 -e TERM=${TERM:-xterm-256color}
--e HOME=/tmp
--e CODEX_HOME=${CODEX_HOME_DIR}
--e CODEX_DOC_IMAGE_ID=$(docker image inspect "$IMAGE" --format '{{.Id}}')
--e OPENAI_API_KEY=
--v ${STATE_DIR}:${CODEX_HOME_DIR}:rw
+-e HOME=${STATE_HOME_DIR}
+-e CLAUDE_CONFIG_DIR=${CLAUDE_CONFIG_DIR}
+-e CLAUDE_DOC_IMAGE_ID=$(docker image inspect "$IMAGE" --format '{{.Id}}')
+-v ${STATE_DIR}:${STATE_HOME_DIR}:rw
 -u $(id -u):$(id -g)
 --cap-drop=ALL
 --security-opt=no-new-privileges
@@ -119,9 +120,11 @@ ARGS
 
 container_bootstrap_script() {
   cat <<'SCRIPT'
-if [[ "${CODEX_DOC_GSD:-1}" != "0" ]]; then
-  gsd_marker="${CODEX_HOME}/.codex-doc-gsd-image-id"
-  gsd_image_id="${CODEX_DOC_IMAGE_ID:-}"
+mkdir -p "${HOME}" "${CLAUDE_CONFIG_DIR}"
+
+if [[ "${CLAUDE_DOC_GSD:-1}" != "0" ]]; then
+  gsd_marker="${HOME}/.claude-doc-gsd-image-id"
+  gsd_image_id="${CLAUDE_DOC_IMAGE_ID:-}"
   gsd_needs_sync=1
   gsd_marker_id=""
 
@@ -133,8 +136,8 @@ if [[ "${CODEX_DOC_GSD:-1}" != "0" ]]; then
 
   if [[ "$gsd_needs_sync" == "1" ]]; then
     tmp_log="$(mktemp)"
-    echo "Syncing Get Shit Done into ${CODEX_HOME}..." >&2
-    if ! get-shit-done-cc --codex --global --config-dir "${CODEX_HOME}" >"$tmp_log" 2>&1; then
+    echo "Syncing Get Shit Done into ${CLAUDE_CONFIG_DIR}..." >&2
+    if ! get-shit-done-cc --claude --global >"$tmp_log" 2>&1; then
       cat "$tmp_log" >&2
       rm -f "$tmp_log"
       exit 1
@@ -161,12 +164,18 @@ main() {
 
   if [[ $# -eq 1 && "$1" == "--login" ]]; then
     ensure_image
-    # Headless-friendly ChatGPT/OpenAI auth
     docker run $(common_run_args) \
-      -e CODEX_DOC_GSD="$GSD" \
+      -e CLAUDE_DOC_GSD="$GSD" \
       "$IMAGE" bash -lc \
       "$(container_bootstrap_script)
-codex login --device-auth && codex login status"
+if claude auth status --json 2>/dev/null | jq -e '.loggedIn == true' >/dev/null 2>&1; then
+  exec claude auth status --text
+else
+  echo 'Launching Claude Code interactive login...' >&2
+  echo 'Complete onboarding and sign-in in the Claude UI.' >&2
+  echo 'If you land in a normal prompt, type /login.' >&2
+  exec claude /login
+fi"
     exit 0
   fi
 
@@ -189,14 +198,14 @@ codex login --device-auth && codex login status"
   fi
 
   docker run $(common_run_args) \
-    -e CODEX_DOC_GSD="$GSD" \
-    -e CODEX_DOC_YOLO="$YOLO" \
+    -e CLAUDE_DOC_GSD="$GSD" \
+    -e CLAUDE_DOC_YOLO="$YOLO" \
     -v "$local_dir":/work:rw -w /work \
     "$IMAGE" bash -lc "$(container_bootstrap_script)
-      if [[ "${CODEX_DOC_YOLO:-1}" != "0" ]]; then
-        exec codex --yolo
+      if [[ \"\${CLAUDE_DOC_YOLO:-1}\" != \"0\" ]]; then
+        exec claude --dangerously-skip-permissions
       else
-        exec codex
+        exec claude
       fi
     "
 }
